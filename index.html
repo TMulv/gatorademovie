@@ -191,6 +191,14 @@
     transition: background 0.2s, gap 0.2s;
   }
   .btn-primary:hover { background: var(--lime); gap: 20px; }
+  .hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .btn-secondary {
+    display: inline-flex; align-items: center; padding: 17px 24px;
+    border: 1px solid rgba(245,242,236,0.45); color: var(--white);
+    font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 3px;
+    text-decoration: none; transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--lime); color: var(--lime); }
 
   .scroll-indicator {
     font-size: 9px;
@@ -268,6 +276,32 @@
     margin-bottom: 20px;
   }
   .body-text strong { color: var(--white); font-weight: 400; }
+
+  .experience { padding: 100px 48px 110px; background: #0b1519; }
+  .experience-header { max-width: 1100px; margin: 0 auto 34px; display: flex;
+    justify-content: space-between; align-items: end; gap: 36px; }
+  .experience-header p { max-width: 360px; color: rgba(245,242,236,0.6);
+    font-size: 16px; line-height: 1.65; font-weight: 300; }
+  .experience-shell { max-width: 1200px; height: min(820px, 92vh); min-height: 600px;
+    margin: 0 auto; border: 1px solid rgba(101,202,230,0.35); overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.34); background: #071318; }
+  .experience-shell iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+  .site-ending { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+    padding: 24px; background: radial-gradient(circle at 50% 45%, #0c4d67, #051b26 58%, #030d12);
+    text-align: center; }
+  .site-ending[hidden] { display: none; }
+  .site-ending-inner { position: relative; z-index: 1; }
+  .site-ending .label { color: #85dff8; margin-bottom: 18px; }
+  .site-ending h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(100px, 18vw, 240px);
+    line-height: .75; letter-spacing: -.025em; color: var(--white); }
+  .site-ending p { max-width: 430px; margin: 28px auto; color: #cbe9f1;
+    font-size: 17px; line-height: 1.5; }
+  .site-ending button { border: 0; background: var(--orange); color: var(--black);
+    font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 3px;
+    padding: 17px 32px; cursor: pointer; }
+  .site-ending button:hover { background: var(--lime); }
+  .site-ending button:focus-visible { outline: 3px solid white; outline-offset: 4px; }
 
   .stats-strip {
     display: grid;
@@ -463,12 +497,17 @@
     .hero-eyebrow { font-size: 9px; }
     .hero-logline { font-size: 15px; max-width: 100%; }
     .hero-actions { flex-direction: column; align-items: flex-start; gap: 28px; margin-top: 36px; }
+    .hero-ctas { gap: 10px; }
     .scroll-indicator { display: none; }
 
     section { padding: 72px 24px; }
 
     .synopsis-grid { grid-template-columns: 1fr; gap: 36px; }
     .section-title { font-size: 52px; }
+    .experience { padding: 72px 16px 80px; }
+    .experience-header { padding: 0 8px; flex-direction: column; align-items: start; gap: 18px; }
+    .experience-header p { max-width: 550px; font-size: 14px; }
+    .experience-shell { height: min(760px, 88vh); min-height: 560px; }
 
     .stats-strip { grid-template-columns: repeat(2, 1fr); }
     .stat-block { padding: 36px 20px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
@@ -488,6 +527,13 @@
     footer { flex-direction: column; gap: 16px; padding: 32px 24px; }
     .footer-disc { text-align: left; }
   }
+  @media (max-width: 480px) {
+    nav { flex-wrap: wrap; row-gap: 9px; background: rgba(10,10,10,.78); }
+    .nav-links { width: 100%; justify-content: space-between; gap: 8px; }
+    .nav-links a { font-size: 9px; letter-spacing: 1px; }
+    .hero-ctas { align-items: stretch; }
+    .btn-primary, .btn-secondary { padding: 15px 22px; }
+  }
 </style>
 </head>
 <body>
@@ -499,6 +545,7 @@
   <div class="nav-logo">GATORADE<span>.</span></div>
   <ul class="nav-links">
     <li><a href="#story">The Story</a></li>
+    <li><a href="#experience">Try the Bottle</a></li>
     <li><a href="#characters">Characters</a></li>
     <li><a href="#contact">Get Involved</a></li>
   </ul>
@@ -522,7 +569,10 @@
   <p class="hero-logline">Before it was on every sideline in America, it started with one scientist watching his players collapse in the Florida heat — and refusing to accept that water was enough.</p>
 
   <div class="hero-actions">
-    <a href="#contact" class="btn-primary">Register Interest &nbsp;→</a>
+    <div class="hero-ctas">
+      <a href="#contact" class="btn-primary">Register Interest &nbsp;→</a>
+      <a href="#experience" class="btn-secondary">Try the Bottle &nbsp;↓</a>
+    </div>
     <div class="scroll-indicator">Scroll</div>
   </div>
 </div>
@@ -561,6 +611,20 @@
       <p class="body-text">What follows is equal parts science experiment and act of faith. Cade and his team mix the first batch in a lab sink. Players hate the taste. Coaches are skeptical. The university wants nothing to do with it.</p>
       <p class="body-text"><strong>Then the Gators start winning games they shouldn't.</strong></p>
     </div>
+  </div>
+</section>
+
+<!-- INTERACTIVE BOTTLE -->
+<section id="experience" class="experience">
+  <div class="experience-header reveal">
+    <div>
+      <div class="label">The Interactive Story</div>
+      <h2 class="section-title">SQUEEZE THE <em>STORY</em></h2>
+    </div>
+    <p>Move it. Turn it. Squeeze it. Each blue splash unlocks one quick fact about how Gatorade began.</p>
+  </div>
+  <div class="experience-shell reveal">
+    <iframe id="bottle-experience" src="bottle.html" title="Interactive Gatorade bottle and founding facts" loading="lazy"></iframe>
   </div>
 </section>
 
@@ -633,6 +697,15 @@
   <div class="footer-disc">Independent fan concept. Not affiliated with Gatorade or PepsiCo.</div>
 </footer>
 
+<div class="site-ending" id="site-ending" role="dialog" aria-modal="true" aria-labelledby="site-ending-title" hidden>
+  <div class="site-ending-inner">
+    <div class="label">4 founding facts unlocked</div>
+    <h2 id="site-ending-title">COMING<br>SOON.</h2>
+    <p>More of the Gatorade story is on the way.</p>
+    <button id="site-restart" type="button">Explore Again</button>
+  </div>
+</div>
+
 <script>
   const cur = document.getElementById('cur');
   const ring = document.getElementById('ring');
@@ -645,6 +718,24 @@
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  const bottleFrame = document.getElementById('bottle-experience');
+  const siteEnding = document.getElementById('site-ending');
+  const siteRestart = document.getElementById('site-restart');
+  window.addEventListener('message', event => {
+    if (event.source !== bottleFrame.contentWindow) return;
+    if (event.data && event.data.type === 'gatorade-story-complete') {
+      siteEnding.hidden = false;
+      document.body.style.overflow = 'hidden';
+      siteRestart.focus();
+    }
+  });
+  siteRestart.addEventListener('click', () => {
+    siteEnding.hidden = true;
+    document.body.style.overflow = '';
+    bottleFrame.contentWindow.postMessage({ type: 'gatorade-story-reset' }, '*');
+    bottleFrame.focus();
+  });
 
   async function handleSubmit() {
     const input = document.getElementById('emailInput');

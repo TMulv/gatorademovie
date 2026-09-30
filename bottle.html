@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gatorade: Squeeze the Story</title>
+<style>
+  :root { --bg1:#071318; --bg2:#173747; --ink:#e8f8ff; --muted:#a1c9d6; --accent:#0b93cd; }
+  html,body { margin:0; height:100%; background:radial-gradient(ellipse at 50% 35%, var(--bg2), var(--bg1) 70%); color:var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; overflow:hidden; }
+  * { box-sizing:border-box; }
+  body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.28;
+    background:linear-gradient(transparent 96%, rgba(155,226,241,.08) 100%); background-size:100% 28px; }
+  canvas { display:block; touch-action:none; cursor:grab; }
+  canvas.dragging { cursor:grabbing; }
+  .brand { position:fixed; z-index:2; top:27px; left:clamp(20px,4vw,64px); font-size:12px; font-weight:900;
+    letter-spacing:.22em; color:#a9e7f7; text-transform:uppercase; }
+  .brand strong { color:#fff; font-size:17px; letter-spacing:-.04em; text-transform:none; margin-right:10px; }
+  .story { position:fixed; z-index:2; right:clamp(20px,5vw,76px); top:50%; transform:translateY(-50%);
+    width:min(350px,34vw); min-height:260px; padding:29px 30px 25px; overflow:hidden;
+    background:rgba(4,24,32,.82); border:1px solid rgba(141,223,243,.28); border-left:4px solid var(--accent);
+    border-radius:22px; box-shadow:0 24px 80px rgba(0,0,0,.27); backdrop-filter:blur(14px); }
+  .story::after { content:""; position:absolute; width:250px; height:250px; left:-95px; bottom:-185px;
+    border:28px solid rgba(37,188,233,.13); border-radius:50%; pointer-events:none; }
+  .story.splash { animation:story-pop .58s ease-out; }
+  @keyframes story-pop { 0% { transform:translateY(-50%) scale(.94); box-shadow:0 0 0 0 rgba(36,190,239,.5); }
+    55% { box-shadow:0 0 0 16px rgba(36,190,239,0); } 100% { transform:translateY(-50%) scale(1); } }
+  .eyebrow { color:#64d4f4; font-size:11px; font-weight:900; letter-spacing:.19em; text-transform:uppercase; }
+  .story h1 { font-size:clamp(28px,3vw,39px); line-height:1.06; letter-spacing:-.05em; margin:17px 0 14px; }
+  .story p { margin:0; max-width:32ch; color:#c9e5ed; font-size:16px; line-height:1.45; }
+  .story-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:26px;
+    padding-top:16px; border-top:1px solid rgba(141,223,243,.18); color:#8db9c7; font-size:12px; font-weight:700; }
+  .story a { color:#9ce5fb; text-decoration:none; }
+  .story a:hover, .story a:focus-visible { text-decoration:underline; }
+  .story a[hidden] { display:none; }
+  .hud { position:fixed; z-index:3; left:0; right:0; bottom:28px; display:flex; flex-direction:column;
+    align-items:center; gap:12px; pointer-events:none; }
+  .ending { position:fixed; z-index:10; inset:0; display:grid; place-items:center; padding:24px; overflow:hidden;
+    background:radial-gradient(circle at 50% 52%, #0e5270 0%, #073043 39%, #03141d 75%); text-align:center;
+    animation:ending-in .65s ease-out both; }
+  .ending[hidden] { display:none; }
+  .ending::before, .ending::after { content:""; position:absolute; width:min(90vw,900px); aspect-ratio:1; border-radius:50%;
+    border:1px solid rgba(87,211,246,.17); pointer-events:none; }
+  .ending::before { transform:scale(.85); box-shadow:0 0 0 90px rgba(33,170,213,.06),0 0 0 190px rgba(33,170,213,.035); }
+  .ending::after { transform:scale(1.35); }
+  .ending-inner { position:relative; z-index:1; max-width:100%; }
+  .ending-kicker { color:#82dbf5; font-size:12px; font-weight:900; letter-spacing:.28em; text-transform:uppercase; }
+  .ending h2 { margin:14px 0 18px; font-size:clamp(56px,12vw,170px); line-height:.82; letter-spacing:-.085em;
+    text-transform:uppercase; text-shadow:0 10px 45px rgba(0,0,0,.24); }
+  .ending p { margin:0 auto 28px; color:#c9ecf5; font-size:clamp(16px,2vw,21px); line-height:1.4; }
+  @keyframes ending-in { from { opacity:0; transform:scale(1.035); } to { opacity:1; transform:scale(1); } }
+  .hint { font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); text-align:center; }
+  button { pointer-events:auto; font:800 15px/1 ui-sans-serif,-apple-system,"Segoe UI",sans-serif; color:#062734;
+    background:var(--accent); border:0; border-radius:999px; padding:16px 28px; cursor:pointer;
+    box-shadow:0 6px 24px rgba(11,147,205,.38); transition:transform .15s, background .15s; }
+  button:hover { background:#56c9ed; transform:translateY(-2px); }
+  button:active { transform:translateY(1px) scale(.97); }
+  button:focus-visible, canvas:focus-visible { outline:3px solid #fff; outline-offset:4px; }
+  @media (max-width:700px) {
+    .brand { top:18px; left:18px; }
+    .story { left:16px; right:16px; top:auto; bottom:116px; transform:none; width:auto; min-height:0;
+      padding:18px 20px 17px; border-radius:18px; }
+    .story.splash { animation:story-pop-mobile .58s ease-out; }
+    @keyframes story-pop-mobile { 0% { transform:scale(.94); box-shadow:0 0 0 0 rgba(36,190,239,.5); }
+      55% { box-shadow:0 0 0 14px rgba(36,190,239,0); } 100% { transform:scale(1); } }
+    .story h1 { font-size:27px; margin:9px 0 7px; }
+    .story p { font-size:14px; max-width:none; }
+    .story-footer { margin-top:12px; padding-top:10px; }
+    .hud { bottom:16px; gap:8px; }
+    .hint { font-size:11px; }
+    button { padding:14px 25px; }
+  }
+  @media (prefers-reduced-motion:reduce) { .story.splash, .ending { animation:none; } button { transition:none; } }
+</style>
+</head>
+<body>
+<div class="brand"><strong>Gatorade</strong> / The beginning</div>
+<section class="story" id="story" aria-live="polite" aria-atomic="true">
+  <div class="eyebrow" id="story-step">THE ORIGIN STORY</div>
+  <h1 id="story-title">One squeeze.<br>One fact.</h1>
+  <p id="story-text">Move and turn the bottle. Squeeze it for four quick facts.</p>
+  <div class="story-footer"><span id="story-progress">0 / 4 facts</span><a id="story-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Read the source ↗</a></div>
+</section>
+<div class="hud" id="hud">
+  <div class="hint" id="hint">Drag to move and turn · tap or hold to squeeze</div>
+  <button id="squeeze" type="button">Squeeze the bottle</button>
+</div>
+<div class="ending" id="ending" role="dialog" aria-modal="true" aria-labelledby="ending-title" hidden>
+  <div class="ending-inner">
+    <div class="ending-kicker">4 founding facts unlocked</div>
+    <h2 id="ending-title">Coming<br>soon.</h2>
+    <p>More of the Gatorade story is on the way.</p>
+    <button id="restart" type="button">Explore again</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+// ---------- renderer / scene ----------
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+
+// soft studio reflections
+const pmrem = new THREE.PMREMGenerator(renderer);
+const env = new THREE.Scene();
+env.background = new THREE.Color(0x10141c);
+const box = (w,h,x,y,z,ry,c) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({color:c, side:THREE.DoubleSide}));
+  m.position.set(x,y,z); m.rotation.y = ry; env.add(m); };
+box(6,10,-8,2,2, Math.PI/2.4, 0xffffff);
+box(4,8, 8,1,-2, -Math.PI/2.2, 0xa9e7f7);
+box(12,3, 0,9,4, 0, 0xffffff);
+scene.environment = pmrem.fromScene(env, 0.03).texture;
+
+scene.add(new THREE.HemisphereLight(0xdff8ff, 0x102b34, 0.6));
+const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(-4,5,6); scene.add(key);
+const rim = new THREE.DirectionalLight(0x84d9f1, 1.2); rim.position.set(5,2,-4); scene.add(rim);
+
+// ---------- geometry (profile in bottle units: 1 unit = 1 dm) ----------
+const P = [[0,0],[0.30,0],[0.36,0.02],[0.39,0.08]];
+let z = 0.12;
+for (let i=0;i<9;i++){ P.push([0.40,z],[0.40,z+0.06],[0.365,z+0.085],[0.365,z+0.095]); z += 0.105; }
+P.push([0.40,z],[0.40,z+0.04],[0.34,1.22],[0.33,1.28],[0.36,1.36],[0.39,1.45],[0.40,1.55],[0.40,1.82],
+       [0.39,1.90],[0.34,2.00],[0.26,2.08],[0.18,2.14],[0.155,2.18],[0.155,2.26],[0,2.26]);
+const lathe = (pts, s=96) => new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])), s);
+
+const PIVOT = 1.2;                 // bottle swings around its middle
+const rig = new THREE.Group();     // position + tilt
+const spin = new THREE.Group();    // slow yaw
+rig.add(spin); scene.add(rig);
+const off = new THREE.Group(); off.position.y = -PIVOT; spin.add(off);
+
+// liquid: interior volume clipped by a moving surface plane
+const inner = P.map(([r,y]) => [r*0.955, Math.min(Math.max(y,0.02),2.24)]);
+const liquidMat = new THREE.ShaderMaterial({
+  side: THREE.DoubleSide,
+  uniforms: {
+    uP:{value:new THREE.Vector3()}, uN:{value:new THREE.Vector3(0,1,0)}, uCam:{value:new THREE.Vector3()},
+    uT:{value:0}, uAmp:{value:0}, uPh:{value:new THREE.Vector2()},
+    uCol:{value:new THREE.Color(0.04,0.57,0.80)}, uDeep:{value:new THREE.Color(0.01,0.27,0.52)}, uSurf:{value:new THREE.Color(0.38,0.77,0.91)}
+  },
+  vertexShader: `
+    varying vec3 vW; varying vec3 vN;
+    void main(){ vec4 w = modelMatrix*vec4(position,1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix)*normal);
+      gl_Position = projectionMatrix*viewMatrix*w; }`,
+  fragmentShader: `
+    uniform vec3 uP, uN, uCam, uCol, uDeep, uSurf; uniform float uT, uAmp; uniform vec2 uPh;
+    varying vec3 vW; varying vec3 vN;
+    float ripple(vec3 w){ return uAmp*(sin(w.x*5.5 + uT*8.0 + uPh.x) + 0.6*sin(w.z*6.5 - uT*6.3 + uPh.y)); }
+    void main(){
+      float d = dot(vW - uP, uN) - ripple(vW);
+      if (d > 0.0) discard;
+      vec3 V = normalize(uCam - vW);
+      vec3 L = normalize(vec3(-0.5, 0.8, 0.6));
+      vec3 N = normalize(vN);
+      if (dot(N, V) < 0.0) N = -N;
+      bool outer = gl_FrontFacing;
+      if (outer) {
+        float diff = 0.55 + 0.45*max(dot(N,L),0.0);
+        float depth = clamp(-d*0.9, 0.0, 1.0);
+        vec3 c = mix(uCol, uDeep, depth*0.65) * diff;
+        float fres = pow(1.0 - max(dot(N,V),0.0), 3.0);
+        c += fres*vec3(0.26,0.78,0.96)*0.55;
+        vec3 H = normalize(L+V); c += pow(max(dot(N,H),0.0), 70.0)*0.7;
+        c = mix(c, vec3(0.72,0.94,0.98), smoothstep(-0.035, 0.0, d)*0.75); // meniscus
+        gl_FragColor = vec4(c, 1.0);
+      } else {
+        float l = 0.65 + 0.35*max(dot(uN, normalize(vec3(-0.3,1.0,0.5))),0.0);
+        float fres = pow(1.0 - abs(dot(uN,V)), 2.0);
+        gl_FragColor = vec4(mix(uSurf*l, vec3(0.78,0.96,1.0), fres*0.35), 1.0);
+      }
+    }`
+});
+const liquid = new THREE.Mesh(lathe(inner), liquidMat);
+liquid.renderOrder = 1; off.add(liquid);
+
+// Wrap the reference bottle's green label, orange bolt, and white wordmark.
+function labelTexture(){
+  const W=2048, H=512, c=document.createElement('canvas'); c.width=W; c.height=H;
+  const g=c.getContext('2d');
+  const green=g.createLinearGradient(0,0,0,H);
+  green.addColorStop(0,'#084e37'); green.addColorStop(.5,'#075a37'); green.addColorStop(1,'#063d30');
+  g.fillStyle=green; g.fillRect(0,0,W,H);
+  for (const x of [0,1024]){
+    g.save(); g.translate(x,0);
+    g.strokeStyle='rgba(133,218,128,.13)'; g.lineWidth=24;
+    g.beginPath(); g.moveTo(-60,390); g.bezierCurveTo(210,240,630,355,1090,80); g.stroke();
+    g.beginPath(); g.moveTo(-80,460); g.bezierCurveTo(260,340,650,440,1090,180); g.stroke();
+    g.fillStyle='#a8421b';
+    g.beginPath(); g.moveTo(490,34); g.lineTo(305,260); g.lineTo(415,246);
+    g.lineTo(264,488); g.lineTo(603,188); g.lineTo(493,192); g.lineTo(630,28); g.closePath(); g.fill();
+    g.fillStyle='#f4722b';
+    g.beginPath(); g.moveTo(471,33); g.lineTo(298,253); g.lineTo(403,240);
+    g.lineTo(259,467); g.lineTo(577,179); g.lineTo(475,181); g.lineTo(608,29); g.closePath(); g.fill();
+    g.strokeStyle='#ffab65'; g.lineWidth=7;
+    g.beginPath(); g.moveTo(462,60); g.lineTo(323,235); g.lineTo(422,224); g.stroke();
+    g.save(); g.translate(565,276); g.transform(1,0,-.20,1,0,0);
+    g.font='italic 900 88px Arial Black, Helvetica, Arial, sans-serif';
+    g.textAlign='center'; g.lineJoin='round'; g.lineWidth=12;
+    g.strokeStyle='#064029'; g.strokeText('Gatorade',0,0);
+    g.fillStyle='#fff'; g.fillText('Gatorade',0,0); g.restore();
+    g.font='700 24px Arial, sans-serif'; g.textAlign='center';
+    g.fillStyle='#d9efe0'; g.fillText('THIRST QUENCHER',565,414);
+    g.restore();
+  }
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=8; t.wrapS=THREE.RepeatWrapping;
+  return t;
+}
+const label = new THREE.Mesh(lathe([[0.365,1.36],[0.395,1.45],[0.405,1.55],[0.405,1.82],[0.395,1.90],[0.345,2.00]]),
+  new THREE.MeshStandardMaterial({map:labelTexture(), roughness:0.35, side:THREE.DoubleSide}));
+label.renderOrder = 2; off.add(label);
+
+const neck = new THREE.Mesh(lathe([[0.155,2.14],[0.159,2.18],[0.159,2.25]]),
+  new THREE.MeshStandardMaterial({color:0x0b93cd, roughness:0.3, side:THREE.DoubleSide}));
+const ring = new THREE.Mesh(lathe([[0,2.22],[0.20,2.22],[0.21,2.25],[0.21,2.32],[0.20,2.34],[0,2.34]]),
+  new THREE.MeshStandardMaterial({color:0xf4772f, roughness:0.3, side:THREE.DoubleSide}));
+const cap = new THREE.Mesh(lathe([[0,2.34],[0.185,2.34],[0.185,2.52],[0.165,2.56],[0.09,2.57],[0.085,2.66],[0.065,2.70],[0,2.70]]),
+  new THREE.MeshStandardMaterial({color:0x05844e, roughness:0.4, side:THREE.DoubleSide}));
+const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.047,0.058,0.065,24),
+  new THREE.MeshStandardMaterial({color:0x075a3b, roughness:0.32}));
+nozzle.position.y = 2.725;
+const nozzleOpening = new THREE.Mesh(new THREE.CircleGeometry(0.039,24),
+  new THREE.MeshBasicMaterial({color:0x05334b, side:THREE.DoubleSide}));
+nozzleOpening.rotation.x = -Math.PI/2; nozzleOpening.position.y = 2.76;
+off.add(neck, ring, cap, nozzle, nozzleOpening);
+
+// clear PET shell, drawn last
+const shell = new THREE.Mesh(lathe(P), new THREE.MeshPhysicalMaterial({
+  color:0xffffff, roughness:0.04, metalness:0, clearcoat:1, clearcoatRoughness:0.03,
+  transparent:true, opacity:0.07, envMapIntensity:1.2, depthWrite:false, side:THREE.FrontSide }));
+shell.renderOrder = 3; off.add(shell);
+
+// soft floor shadow
+const shadowTex = (() => { const c=document.createElement('canvas'); c.width=c.height=128; const g=c.getContext('2d');
+  const r=g.createRadialGradient(64,64,0,64,64,64); r.addColorStop(0,'rgba(0,0,0,.55)'); r.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=r; g.fillRect(0,0,128,128); return new THREE.CanvasTexture(c); })();
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.6,0.5), new THREE.MeshBasicMaterial({map:shadowTex, transparent:true, depthWrite:false}));
+shadow.rotation.x = -Math.PI/2; scene.add(shadow);
+
+// ---------- layout ----------
+function resize(){
+  const w=innerWidth, h=innerHeight; renderer.setSize(w,h); camera.aspect=w/h;
+  const needH = w<=700 ? 5.6 : 4.2, needW = 2.6, f = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const dist = Math.max(needH/2/f, needW/2/(f*camera.aspect));
+  camera.position.set(0, w<=700 ? 0.52 : 0.35, dist);
+  camera.lookAt(0, w<=700 ? 0.38 : 0.05, 0); camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+// ---------- one splash, one short fact ----------
+const facts = [
+  { title:'1965. One big question.', text:'Why were Florida football players getting sick in the heat? A coach asked UF doctors.',
+    source:'https://history.med.ufl.edu/profiles-in-history/dr-robert-cade/' },
+  { title:'Four people made it.', text:'Robert Cade, Dana Shires, James Free, and Alejandro de Quesada built the first formula.',
+    source:'https://history.med.ufl.edu/profiles-in-history/dr-robert-cade/' },
+  { title:'The first batch needed lemon.', text:'Salts replaced sweat loss. Sugar supplied fuel. Lemon juice made it taste better.',
+    source:'https://research.ufl.edu/gatorade-anniversary' },
+  { title:'The Gators gave it its name.', text:'Made for the University of Florida Gators, the drink became Gatorade.',
+    source:'https://www.pepsico.com/en/newsroom/stories/2026/how-gatorade-started-sports-hydration' }
+];
+const story = document.getElementById('story');
+const stepEl = document.getElementById('story-step');
+const titleEl = document.getElementById('story-title');
+const textEl = document.getElementById('story-text');
+const progressEl = document.getElementById('story-progress');
+const sourceEl = document.getElementById('story-source');
+const squeezeButton = document.getElementById('squeeze');
+const hintEl = document.getElementById('hint');
+const ending = document.getElementById('ending');
+const restartButton = document.getElementById('restart');
+const hud = document.getElementById('hud');
+let nextFact = 0, complete = false, locked = false, fillLevel = 1.42;
+
+function reveal(){
+  if (nextFact < facts.length){
+    const fact = facts[nextFact++];
+    stepEl.textContent = `SPLASH ${nextFact} OF ${facts.length}`;
+    titleEl.textContent = fact.title;
+    textEl.textContent = fact.text;
+    progressEl.textContent = `${nextFact} / ${facts.length} facts`;
+    sourceEl.href = fact.source; sourceEl.hidden = false;
+    squeezeButton.textContent = nextFact === facts.length ? 'One more squeeze' : 'Squeeze for next fact';
+  } else {
+    complete = true;
+    stepEl.textContent = 'NEXT CHAPTER';
+    titleEl.textContent = 'Coming soon.';
+    textEl.textContent = 'More Gatorade stories are on the way.';
+    progressEl.textContent = `${facts.length} / ${facts.length} facts unlocked`;
+    sourceEl.hidden = true;
+    squeezeButton.textContent = 'Start over';
+    hintEl.textContent = 'All four founding facts unlocked';
+    ending.hidden = false;
+    story.inert = true; hud.inert = true; renderer.domElement.inert = true;
+    restartButton.focus();
+    if (window.parent !== window) window.parent.postMessage({ type:'gatorade-story-complete' }, '*');
+  }
+  story.classList.remove('splash');
+  void story.offsetWidth;
+  story.classList.add('splash');
+}
+function resetStory(){
+  nextFact = 0; complete = false; locked = false; fillLevel = 1.42;
+  ending.hidden = true;
+  story.inert = false; hud.inert = false; renderer.domElement.inert = false;
+  stepEl.textContent = 'THE ORIGIN STORY';
+  titleEl.innerHTML = 'One squeeze.<br>One fact.';
+  textEl.textContent = 'Move and turn the bottle. Squeeze it for four quick facts.';
+  progressEl.textContent = '0 / 4 facts'; sourceEl.hidden = true;
+  squeezeButton.textContent = 'Squeeze the bottle';
+  hintEl.textContent = 'Drag to move and turn · tap or hold to squeeze';
+  story.classList.remove('splash');
+  bottlePosition.set(innerWidth>700 ? -.45 : 0, innerWidth>700 ? -.1 : .34);
+  yaw = .6; yawVelocity = 0; activePointer = null; squeezeTarget = 0;
+  window.clearTimeout(holdTimer);
+  renderer.domElement.classList.remove('dragging');
+  squeezeButton.focus();
+}
+restartButton.addEventListener('click', resetStory);
+window.addEventListener('message', event => {
+  if (window.parent !== window && event.source === window.parent && event.data && event.data.type === 'gatorade-story-reset') resetStory();
+});
+
+// Short 3D jet from the cap. Drops share one geometry and material.
+const dropGeometry = new THREE.SphereGeometry(0.035, 8, 6);
+const dropMaterial = new THREE.MeshBasicMaterial({color:0x20b9ed, transparent:true, opacity:.94, depthWrite:false});
+const drops = [];
+const dropOrigin = new THREE.Vector3();
+let emission = 0, emissionCarry = 0;
+function spawnDrop(){
+  off.localToWorld(dropOrigin.set(0,2.78,0));
+  const mesh = new THREE.Mesh(dropGeometry, dropMaterial);
+  mesh.position.copy(dropOrigin).add(new THREE.Vector3((Math.random()-.5)*.045,0,(Math.random()-.5)*.07));
+  const size = .7 + Math.random()*1.1;
+  mesh.scale.set(size,size*(1.2+Math.random()),size);
+  mesh.renderOrder = 5; scene.add(mesh);
+  drops.push({mesh, velocity:new THREE.Vector3(1.35+Math.random()*1.35,1.2+Math.random()*.85,(Math.random()-.5)*.8), life:1.12});
+}
+function updateDrops(dt){
+  if (emission > 0){
+    emission = Math.max(0, emission-dt);
+    emissionCarry += 155*dt;
+    while (emissionCarry >= 1){ spawnDrop(); emissionCarry -= 1; }
+  }
+  for (let i=drops.length-1;i>=0;i--){
+    const drop = drops[i];
+    drop.velocity.y -= 4.5*dt;
+    drop.mesh.position.addScaledVector(drop.velocity,dt);
+    drop.life -= dt;
+    if (drop.life <= 0 || drop.mesh.position.y < -1.6){
+      scene.remove(drop.mesh); drops.splice(i,1);
+    }
+  }
+}
+function splash(){
+  if (locked || complete) return;
+  locked = true; squeezeTarget = 1; emission = .43; emissionCarry = 0;
+  fillLevel = Math.max(1.05, fillLevel-.075);
+  window.setTimeout(reveal, 270);
+  window.setTimeout(() => { squeezeTarget = 0; locked = false; }, 620);
+}
+squeezeButton.addEventListener('click', () => { if (complete) resetStory(); else splash(); });
+
+// Drag moves and turns the bottle; a tap or a short hold squeezes it.
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const dragPlane = new THREE.Plane(new THREE.Vector3(0,0,1),0);
+const dragPoint = new THREE.Vector3(), pressPoint = new THREE.Vector3();
+const pressPosition = new THREE.Vector2();
+const bottlePosition = new THREE.Vector2(innerWidth>700 ? -.45 : 0, innerWidth>700 ? -.1 : .34);
+let activePointer = null, startX = 0, startY = 0, lastX = 0, turning = false, firedOnHold = false, holdTimer = 0;
+let yaw = .6, yawVelocity = 0, squeezeAmount = 0, squeezeTarget = 0;
+let phi = 0, phiVelocity = 0, psi = 0, amp = 0, t = 0, moveImpulse = 0;
+const phase = new THREE.Vector2(), tmp = new THREE.Vector3(), clock = new THREE.Clock();
+const clamp = (x,a,b) => Math.min(b, Math.max(a,x));
+renderer.domElement.tabIndex = 0;
+renderer.domElement.setAttribute('aria-label','Gatorade bottle. Drag to move and turn. Tap or hold to squeeze. Use arrow keys to move, Q and E to turn, and Enter or Space to squeeze.');
+function pointerWorld(e){
+  ndc.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1);
+  ray.setFromCamera(ndc,camera);
+  ray.ray.intersectPlane(dragPlane,dragPoint);
+  return dragPoint;
+}
+function clampPosition(){
+  const viewH = 2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.position.z;
+  const viewW = viewH*camera.aspect;
+  const centerY = innerWidth<=700 ? .38 : .05;
+  bottlePosition.x = clamp(bottlePosition.x,-viewW/2+.42,viewW/2-.42);
+  bottlePosition.y = clamp(bottlePosition.y,centerY-viewH/2+1.4,centerY+viewH/2-1.4);
+}
+function bottleHit(e){
+  ndc.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1);
+  ray.setFromCamera(ndc,camera);
+  return ray.intersectObjects([shell,label,cap,ring,nozzle],false).length > 0;
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (activePointer !== null || !bottleHit(e)) return;
+  e.preventDefault(); activePointer = e.pointerId; startX = lastX = e.clientX; startY = e.clientY;
+  pressPoint.copy(pointerWorld(e)); pressPosition.copy(bottlePosition);
+  turning = false; firedOnHold = false; squeezeTarget = .55;
+  renderer.domElement.setPointerCapture(e.pointerId);
+  holdTimer = window.setTimeout(() => { if (!turning && !complete){ firedOnHold = true; splash(); } }, 330);
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (e.pointerId !== activePointer) return;
+  if (Math.hypot(e.clientX-startX,e.clientY-startY) > 8) turning = true;
+  if (turning){
+    window.clearTimeout(holdTimer); squeezeTarget = 0;
+    const dx = e.clientX-lastX;
+    const world = pointerWorld(e);
+    bottlePosition.set(pressPosition.x+world.x-pressPoint.x,pressPosition.y+world.y-pressPoint.y);
+    clampPosition();
+    yaw -= dx*.012; yawVelocity = clamp(-dx*.11,-4,4);
+    moveImpulse = clamp(moveImpulse+dx*.018,-2,2);
+    renderer.domElement.classList.add('dragging');
+  }
+  lastX = e.clientX;
+});
+function endPointer(e,cancelled){
+  if (e.pointerId !== activePointer) return;
+  window.clearTimeout(holdTimer);
+  if (!cancelled && !turning && !firedOnHold) splash();
+  activePointer = null;
+  if (turning || cancelled || !locked) squeezeTarget = 0;
+  renderer.domElement.classList.remove('dragging');
+}
+renderer.domElement.addEventListener('pointerup', e => endPointer(e,false));
+renderer.domElement.addEventListener('pointercancel', e => endPointer(e,true));
+renderer.domElement.addEventListener('keydown', e => {
+  if (e.key.startsWith('Arrow')){
+    e.preventDefault();
+    const step = .17;
+    if (e.key === 'ArrowLeft') bottlePosition.x -= step;
+    if (e.key === 'ArrowRight') bottlePosition.x += step;
+    if (e.key === 'ArrowUp') bottlePosition.y += step;
+    if (e.key === 'ArrowDown') bottlePosition.y -= step;
+    clampPosition();
+  } else if (e.key.toLowerCase() === 'q' || e.key.toLowerCase() === 'e'){
+    e.preventDefault(); yaw += e.key.toLowerCase() === 'q' ? -.22 : .22; yawVelocity = 0;
+  } else if (e.key === 'Enter' || e.key === ' '){
+    e.preventDefault(); if (complete) resetStory(); else splash();
+  }
+});
+
+function frame(){
+  const dt = Math.min(clock.getDelta(),1/30);
+  t += dt;
+  if (activePointer === null){ yaw += yawVelocity*dt; yawVelocity *= Math.exp(-5*dt); }
+  squeezeAmount += (squeezeTarget-squeezeAmount)*Math.min(1,dt*19);
+  const bodyWidth = 1-.13*squeezeAmount;
+  for (const part of [shell,label,liquid]){ part.scale.x = bodyWidth; part.scale.z = bodyWidth; }
+  clampPosition();
+  rig.position.set(bottlePosition.x,bottlePosition.y,0);
+  rig.rotation.z = -.035*squeezeAmount*Math.sin(t*22);
+  spin.rotation.y = yaw;
+  rig.updateMatrixWorld(true);
+
+  phiVelocity += (-25*phi-7*phiVelocity-yawVelocity*.9-moveImpulse*1.8+squeezeAmount*1.2)*dt;
+  moveImpulse *= Math.exp(-9*dt);
+  phi = clamp(phi+phiVelocity*dt,-.36,.36);
+  psi += (-psi*5+Math.sin(t*9)*squeezeAmount*.2)*dt;
+  amp += (Math.min(.055,Math.abs(phiVelocity)*.005+squeezeAmount*.035)-amp)*Math.min(1,dt*8);
+  phase.x += phiVelocity*dt*2; phase.y += squeezeAmount*dt*8;
+  const u = liquidMat.uniforms;
+  u.uP.value.copy(off.localToWorld(tmp.set(0,fillLevel,0)));
+  u.uN.value.set(-Math.sin(phi)*Math.cos(psi),Math.cos(phi)*Math.cos(psi),Math.sin(psi)).normalize();
+  u.uCam.value.copy(camera.position); u.uT.value = t; u.uAmp.value = amp; u.uPh.value.copy(phase);
+
+  shadow.position.x = rig.position.x;
+  const restingY = innerWidth>700 ? -.1 : .34;
+  shadow.position.y = restingY-PIVOT-.08;
+  shadow.material.opacity = clamp(.8-Math.max(0,bottlePosition.y-restingY)*.35,.2,.8);
+  updateDrops(dt);
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+frame();
+})();
+</script>
+</body>
+</html>
